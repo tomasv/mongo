@@ -42,12 +42,13 @@ class Import : public Tool {
     bool _headerLine;
     bool _upsert;
     bool _doimport;
+    bool _stringOnly;
     bool _jsonArray;
     vector<string> _upsertFields;
 
     void _append( BSONObjBuilder& b , const string& fieldName , const string& data ) {
-        if ( b.appendAsNumber( fieldName , data ) )
-            return;
+	if (!_stringOnly && b.appendAsNumber( fieldName , data ) )
+	    return;
 
         if ( _ignoreBlanks && data.size() == 0 )
             return;
@@ -148,6 +149,7 @@ public:
         ("type",po::value<string>() , "type of file to import.  default: json (json,csv,tsv)")
         ("file",po::value<string>() , "file to import from; if not specified stdin is used" )
         ("drop", "drop collection first " )
+        ("stringOnly", "Interpret all data as string type" )
         ("headerline","CSV,TSV only - use first line as headers")
         ("upsert", "insert or update objects that already exist" )
         ("upsertFields", po::value<string>(), "comma-separated fields for the query part of the upsert. You should make sure this is indexed" )
@@ -164,6 +166,7 @@ public:
         _upsert = false;
         _doimport = true;
         _jsonArray = false;
+	_stringOnly = false;
     }
 
     int run() {
@@ -225,6 +228,10 @@ public:
 
         if ( hasParam( "noimport" ) ) {
             _doimport = false;
+        }
+
+        if ( hasParam( "stringOnly" ) ) {
+            _stringOnly = true;
         }
 
         if ( hasParam( "type" ) ) {
